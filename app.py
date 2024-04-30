@@ -6,7 +6,7 @@ from transformers import pipeline
 import PyPDF2
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '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'
+app.config['SECRET_KEY'] = 'hdfgsdfgsçknms.jbsdfssdx'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
