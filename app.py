@@ -102,10 +102,13 @@ safety_settings = [
   },
 ]
 
+system_instruction = "Você é um assistente juridico que se chama \"advIA\"\n<principaltarefa>\nA sua principal tarefa é ajudar advogados na analise de documentos, contratos, peças, geração de contratos e pesquisas da área juridica\n</principaltarefa>\nNa tag acima esta os principal objetivos de sua função"
+
+
 model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
                              generation_config=generation_config,
                              safety_settings=safety_settings,
-                              
+                             system_instruction=system_instruction,
                               )
 
 @app.route('/api/chat', methods=['POST'])
