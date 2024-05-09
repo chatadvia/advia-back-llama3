@@ -1,66 +1,10 @@
-# from flask import Flask, request, jsonify, abort, session
-# from flask_session import Session
-# from flask_cors import CORS
-# import os
-# from transformers import pipeline
-# import PyPDF2
-
-# app = Flask(__name__)
-# app.config['SECRET_KEY'] = 'hdfgsdfgsçknms.jbsdfssdx'
-# app.config['SESSION_TYPE'] = 'filesystem'
-# Session(app)
-# app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-
-# CORS(app, supports_credentials=True)
-
-# # Configuração do modelo Hugging Face
-# model_id = "meta-llama/Meta-Llama-3-8B"
-# token = "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"
-# chat_model = pipeline("text-generation", model=model_id, use_auth_token=token)
-
-# @app.route('/api/chat/llama3', methods=['POST'])
-# def chat():
-#     if 'history' not in session:
-#         session['history'] = []
-
-#     user_message = request.form.get('message', '')
-#     file = request.files.get('file')
-
-#     if file and allowed_file(file.filename):
-#         pdf_text = extract_text_from_pdf(file)
-#         user_message += f" PDF Text: {pdf_text}"
-
-#     if user_message.strip():
-#         session['history'].append(f"User: {user_message}")
-
-#     full_context = "\n".join(entry.split(": ", 1)[1] for entry in session['history'])
-
-#     response = chat_model(full_context, max_length=512, num_return_sequences=1)[0]
-
-#     session['history'].append(f"Bot: {response['generated_text']}")
-
-#     return jsonify({'message': response['generated_text']})
-
-# def extract_text_from_pdf(file):
-#     try:
-#         pdf_reader = PyPDF2.PdfReader(file.stream)
-#         return ''.join(page.extract_text() or "" for page in pdf_reader.pages)
-#     except Exception as e:
-#         print(f"Failed to extract PDF text: {e}")
-#         abort(400, 'Failed to extract text from PDF.')
-
-# def allowed_file(filename):
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf'}
-
-# if __name__ == "__main__":
-#     app.run(host='0.0.0.0', port=8501)
-
 from flask import Flask, request, jsonify, abort, session
 from flask_session import Session
 from flask_cors import CORS
 import os
 import google.generativeai as genai
 import PyPDF2
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'gdçkmdf~çpgndiaÕBNLKFJHDBLS56461651dfgsd3g4'
@@ -73,14 +17,13 @@ CORS(app, supports_credentials=True)
 os.environ['GOOGLE_API_KEY'] = "AIzaSyBcYei2m_mC8QSBQh72DQ1SbbwOL_pNHfo"
 genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
 
-#model = genai.GenerativeModel('gemini-1.5-pro-latest')  # Atualizado para o modelo "gemini 1.5 Pro"
 
 # Set up the model
 generation_config = {
-  "temperature": 1,
+  "temperature": 0.7,
   "top_p": 0.95,
   "top_k": 0,
-  "max_output_tokens": 8192,
+  "max_output_tokens": 4096,
 }
 
 safety_settings = [
@@ -112,6 +55,7 @@ model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
                               )
 
 @app.route('/api/chat', methods=['POST'])
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def chat():
     if 'history' not in session:
         session['history'] = []
@@ -129,9 +73,9 @@ def chat():
     full_context = "\n".join(entry.split(": ", 1)[1] for entry in session['history'])
 
     response = model.generate_content(full_context)
-
+    print(response)
     session['history'].append(f"Bot: {response.text}")
-
+    print(session['history'])
     return jsonify({'message': response.text})
 
 def extract_text_from_pdf(file):
